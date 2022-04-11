@@ -1,0 +1,39 @@
+version: '3.7'
+services:
+  consul-security-service:
+    image: consul:latest
+    build: .
+    ports:
+      - "8500:8500"
+      - "8600:8600/tcp"
+      - "8600:8600/udp"
+    restart: always
+    container_name: consul-security-service
+    command: "agent -server -ui -node=server-2 -bootstrap-expect=1 -client=0.0.0.0"
+
+  spring-security-keycloak:
+    image: jboss/keycloak
+    container_name: spring-security-keycloak
+    environment:
+      - KEYCLOAK_USER=spring
+      - KEYCLOAK_PASSWORD=spring123
+    ports:
+      - "8889:8080"
+  demo-api:
+    image: kirillesau/spring-security-demo/demo-api:latest
+    container_name: demo-api
+#    ports:
+#      - "8680:8080"
+    environment:
+      - SPRING_CLOUD_CONSUL_HOST=consul-security-service
+    depends_on:
+      - consul-security-service
+  gateway:
+    image: kirillesau/spring-security-demo/gateway:latest
+    container_name: spring-security-gateway
+    ports:
+      - "8888:8080"
+    environment:
+      - SPRING_CLOUD_CONSUL_HOST=consul-security-service
+    depends_on:
+      - consul-security-service
