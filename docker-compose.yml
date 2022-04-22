@@ -1,7 +1,16 @@
 version: '3.7'
+
+volumes:
+  postgres_data:
+    driver: local
+  consul_data:
+    driver: local
+
 services:
   consul-security-service:
     image: consul:latest
+    volumes:
+      - consul_data:/consul/data
     build: .
     ports:
       - "8500:8500"
@@ -12,13 +21,38 @@ services:
     command: "agent -server -ui -node=server-2 -bootstrap-expect=1 -client=0.0.0.0"
 
   spring-security-keycloak:
-    image: jboss/keycloak
+    image: quay.io/keycloak/keycloak:legacy
     container_name: spring-security-keycloak
+    restart: always
     environment:
-      - KEYCLOAK_USER=spring
-      - KEYCLOAK_PASSWORD=spring123
+      DB_VENDOR: POSTGRES
+      DB_ADDR: db-keycloak
+      DB_DATABASE: keycloak
+      DB_USER: keycloak
+      DB_SCHEMA: public
+      DB_PASSWORD: password
+      KEYCLOAK_USER: spring
+      KEYCLOAK_PASSWORD: spring123
+      TZ: Europe/Berlin
     ports:
       - "8889:8080"
+    depends_on:
+      - db-keycloak
+
+  db-keycloak:
+    image: postgres
+    container_name: db-keycloak
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password
+      TZ: Europe/Berlin
+      PGTZ: Europe/Berlin
+    ports:
+      - "5432:5432"
   demo-api:
     image: kirillesau/spring-security-demo/demo-api:latest
     container_name: demo-api
