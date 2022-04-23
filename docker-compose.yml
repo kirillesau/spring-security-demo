@@ -55,9 +55,6 @@ services:
       - "5432:5432"
   demo-api:
     image: kirillesau/spring-security-demo/demo-api:latest
-#    container_name: demo-api
-#    ports:
-#      - "8680:8080"
     environment:
       - SPRING_CLOUD_CONSUL_HOST=consul-security-service
       - SPRING_PROFILES_ACTIVE=docker
